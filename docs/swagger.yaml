@@ -1,0 +1,102 @@
+basePath: /
+definitions:
+  handler.refreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  jwt.TokenPair:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    type: object
+host: localhost:8085
+info:
+  contact: {}
+  description: Сервис аутентификации и авторизации пользователей
+  title: Auth Service API
+  version: "1.0"
+paths:
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет пару токенов используя refresh токен
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.refreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное обновление токенов
+          schema:
+            $ref: '#/definitions/jwt.TokenPair'
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неверный или истекший токен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Обновление токенов
+      tags:
+      - auth
+  /auth/tokens:
+    post:
+      description: Генерирует пару access и refresh токенов для пользователя
+      parameters:
+      - description: ID пользователя в формате UUID
+        in: query
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная генерация токенов
+          schema:
+            $ref: '#/definitions/jwt.TokenPair'
+        "400":
+          description: Ошибка валидации (неправильный формат user_id или отсутствует
+            параметр)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Сессия уже существует (токены уже были сгенерированы для данного
+            пользователя)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Генерация токенов
+      tags:
+      - auth
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

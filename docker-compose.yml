@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate
+    command: -path=/migrations -database "postgres://postgres:${DB_PASSWORD}@postgres:5432/${DB_NAME}?sslmode=disable" up
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_SSLMODE=${DB_SSLMODE}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ACCESS_TTL=${JWT_ACCESS_TTL}
+      - JWT_REFRESH_TTL=${JWT_REFRESH_TTL}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+      - SMTP_USE_TLS=${SMTP_USE_TLS}
+      - ENV=${ENV}
+      - HTTP_SERVER_ADDRESS=${HTTP_SERVER_ADDRESS}
+    ports:
+      - "${HTTP_SERVER_ADDRESS}:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

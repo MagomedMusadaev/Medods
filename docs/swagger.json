@@ -1,0 +1,152 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Сервис аутентификации и авторизации пользователей",
+        "title": "Auth Service API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8085",
+    "basePath": "/",
+    "paths": {
+        "/auth/refresh": {
+            "post": {
+                "description": "Обновляет пару токенов используя refresh токен",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Обновление токенов",
+                "parameters": [
+                    {
+                        "description": "Refresh токен",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.refreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешное обновление токенов",
+                        "schema": {
+                            "$ref": "#/definitions/jwt.TokenPair"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Неверный или истекший токен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/tokens": {
+            "post": {
+                "description": "Генерирует пару access и refresh токенов для пользователя",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Генерация токенов",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пользователя в формате UUID",
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешная генерация токенов",
+                        "schema": {
+                            "$ref": "#/definitions/jwt.TokenPair"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации (неправильный формат user_id или отсутствует параметр)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Сессия уже существует (токены уже были сгенерированы для данного пользователя)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handler.refreshRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "jwt.TokenPair": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "refreshToken": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}
