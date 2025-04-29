@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/medods/auth-service/internal/domain"
 	"log/slog"
 )
@@ -82,7 +83,6 @@ func (r *RefreshTokenRepository) DeleteRefreshSession(ctx context.Context, refre
 	if err != nil {
 		slog.Error(op,
 			"ошибка при сохранении сессии",
-			slog.String("user_id", session.UserID.String()),
 			slog.String("error", err.Error()))
 		return fmt.Errorf("%s: %w", op, err)
 	}
